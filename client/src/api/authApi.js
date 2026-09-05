@@ -1,4 +1,4 @@
-const axiosInstance = require('./axiosInstance');
+import axiosInstance from './axiosInstance';
 
 const authApi = {
   register: (userData) => axiosInstance.post('/auth/register', userData),
@@ -6,4 +6,4 @@ const authApi = {
   getMe: () => axiosInstance.get('/auth/me'),
 };
 
-module.exports = authApi;
+export default authApi;

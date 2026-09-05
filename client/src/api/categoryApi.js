@@ -1,4 +1,4 @@
-const axiosInstance = require('./axiosInstance');
+import axiosInstance from './axiosInstance';
 
 const categoryApi = {
   getCategories: (type) => axiosInstance.get('/categories', { params: { type } }),
@@ -6,4 +6,4 @@ const categoryApi = {
   deleteCategory: (id) => axiosInstance.delete(`/categories/${id}`),
 };
 
-module.exports = categoryApi;
+export default categoryApi;

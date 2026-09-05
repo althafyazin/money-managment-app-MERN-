@@ -1,4 +1,4 @@
-const axiosInstance = require('./axiosInstance');
+import axiosInstance from './axiosInstance';
 
 const budgetApi = {
   getBudgets: (params) => axiosInstance.get('/budgets', { params }),
@@ -7,4 +7,4 @@ const budgetApi = {
   deleteBudget: (id) => axiosInstance.delete(`/budgets/${id}`),
 };
 
-module.exports = budgetApi;
+export default budgetApi;

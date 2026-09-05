@@ -1,4 +1,4 @@
-const axiosInstance = require('./axiosInstance');
+import axiosInstance from './axiosInstance';
 
 const expenseApi = {
   getExpenses: (params) => axiosInstance.get('/expenses', { params }),
@@ -8,4 +8,4 @@ const expenseApi = {
   deleteExpense: (id) => axiosInstance.delete(`/expenses/${id}`),
 };
 
-module.exports = expenseApi;
+export default expenseApi;

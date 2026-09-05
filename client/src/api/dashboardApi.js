@@ -1,4 +1,4 @@
-const axiosInstance = require('./axiosInstance');
+import axiosInstance from './axiosInstance';
 
 const dashboardApi = {
   getSummary: () => axiosInstance.get('/dashboard/summary'),
@@ -6,4 +6,4 @@ const dashboardApi = {
   getRecent: (limit) => axiosInstance.get('/dashboard/recent', { params: { limit } }),
 };
 
-module.exports = dashboardApi;
+export default dashboardApi;
