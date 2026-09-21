@@ -40,3 +40,11 @@
 - [x] Build `AuthContext` and `ThemeContext` global providers.
 - [x] Build Recharts visual components (`CategoryPieChart`, `MonthlyTrendChart`).
 - [x] Build full SPA pages (`Login`, `Register`, `Dashboard`, `Expenses`, `Incomes`, `Budgets`).
+
+## Phase 9: Enterprise Features & AI Financial Health Score
+- [x] Create RFC 4180 CSV Export service (`exportService.js`, `exportController.js`, `/api/v1/export/csv`).
+- [x] Implement AI Financial Health Score & Insights engine (`insightService.js`, `insightController.js`, `/api/v1/insights`).
+- [x] Build `RecurringTransaction` model, service & auto-processing template engine (`/api/v1/recurring`).
+- [x] Develop frontend `exportApi.js`, `insightApi.js`, `recurringApi.js`.
+- [x] Create `AIInsightsCard.jsx` widget with Health Score SVG Gauge and recommendations.
+- [x] Update Dashboard UI with CSV export download trigger & AI Health Card.

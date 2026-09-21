@@ -1,28 +1,36 @@
 import React, { useState, useEffect } from 'react';
-import { Wallet, ArrowDownLeft, CreditCard, PiggyBank, ArrowUpRight, TrendingUp } from 'lucide-react';
+import { Wallet, ArrowDownLeft, CreditCard, PiggyBank, ArrowUpRight, Download, Sparkles } from 'lucide-react';
 import dashboardApi from '../api/dashboardApi';
+import { insightApi } from '../api/insightApi';
+import { exportApi } from '../api/exportApi';
 import StatCard from '../components/common/StatCard';
 import CategoryPieChart from '../components/charts/CategoryPieChart';
 import MonthlyTrendChart from '../components/charts/MonthlyTrendChart';
 import LoadingSpinner from '../components/common/LoadingSpinner';
+import AIInsightsCard from '../components/AIInsightsCard';
 
 const Dashboard = () => {
   const [summary, setSummary] = useState(null);
   const [charts, setCharts] = useState(null);
   const [recent, setRecent] = useState([]);
+  const [insights, setInsights] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const [sumRes, chartRes, recentRes] = await Promise.all([
+        const [sumRes, chartRes, recentRes, insightRes] = await Promise.allSettled([
           dashboardApi.getSummary(),
           dashboardApi.getCharts('6months'),
           dashboardApi.getRecent(5),
+          insightApi.getInsights(),
         ]);
-        setSummary(sumRes.data);
-        setCharts(chartRes.data);
-        setRecent(recentRes.data.transactions || []);
+
+        if (sumRes.status === 'fulfilled') setSummary(sumRes.value.data);
+        if (chartRes.status === 'fulfilled') setCharts(chartRes.value.data);
+        if (recentRes.status === 'fulfilled') setRecent(recentRes.value.data.transactions || []);
+        if (insightRes.status === 'fulfilled') setInsights(insightRes.value);
       } catch (err) {
         console.error('Failed to load dashboard data:', err);
       } finally {
@@ -32,6 +40,17 @@ const Dashboard = () => {
 
     fetchDashboardData();
   }, []);
+
+  const handleExportCsv = async () => {
+    try {
+      setExporting(true);
+      await exportApi.downloadCsv();
+    } catch (err) {
+      console.error('Export failed:', err);
+    } finally {
+      setExporting(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -45,6 +64,23 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-8 animate-fade-in">
+      {/* Header Action Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-slate-200 dark:border-slate-800">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Dashboard Overview</h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400">Welcome back! Here is your financial summary.</p>
+        </div>
+
+        <button
+          onClick={handleExportCsv}
+          disabled={exporting}
+          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm rounded-xl transition shadow-sm disabled:opacity-50"
+        >
+          <Download className="w-4 h-4" />
+          {exporting ? 'Exporting...' : 'Export CSV Report'}
+        </button>
+      </div>
+
       {/* Top Financial KPI Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         <StatCard
@@ -71,11 +107,14 @@ const Dashboard = () => {
         />
         <StatCard
           title="Savings Rate"
-          amount={lifetime?.savingsRate ? `${lifetime.savingsRate}%` : '0%'}
+          amount={lifetime?.savingsRate !== undefined && lifetime?.savingsRate !== null ? `${lifetime.savingsRate}%` : '0%'}
           icon={PiggyBank}
           color="amber"
         />
       </div>
+
+      {/* AI Financial Health Insights Widget */}
+      <AIInsightsCard data={insights} loading={loading} />
 
       {/* Visual Analytics Charts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

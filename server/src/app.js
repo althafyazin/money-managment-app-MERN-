@@ -11,6 +11,9 @@ const expenseRoutes = require('./routes/expenseRoutes');
 const incomeRoutes = require('./routes/incomeRoutes');
 const budgetRoutes = require('./routes/budgetRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
+const exportRoutes = require('./routes/exportRoutes');
+const insightRoutes = require('./routes/insightRoutes');
+const recurringRoutes = require('./routes/recurringRoutes');
 const errorHandler = require('./middlewares/errorHandler');
 const AppError = require('./utils/AppError');
 
@@ -44,6 +47,9 @@ app.use('/api/v1/expenses', expenseRoutes);
 app.use('/api/v1/incomes', incomeRoutes);
 app.use('/api/v1/budgets', budgetRoutes);
 app.use('/api/v1/dashboard', dashboardRoutes);
+app.use('/api/v1/export', exportRoutes);
+app.use('/api/v1/insights', insightRoutes);
+app.use('/api/v1/recurring', recurringRoutes);
 
 // Direct root health shortcut
 app.use('/health', healthRoutes);
