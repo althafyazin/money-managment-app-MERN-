@@ -11,6 +11,7 @@ import Dashboard from './pages/Dashboard';
 import Expenses from './pages/Expenses';
 import Incomes from './pages/Incomes';
 import Budgets from './pages/Budgets';
+import Recurring from './pages/Recurring';
 
 const AppLayout = ({ children }) => {
   const location = useLocation();
@@ -25,6 +26,8 @@ const AppLayout = ({ children }) => {
         return 'Income Management';
       case '/budgets':
         return 'Budget Limits & Goals';
+      case '/recurring':
+        return 'Recurring Transactions';
       default:
         return 'FinanceFlow';
     }
@@ -82,6 +85,14 @@ function App() {
                 element={
                   <AppLayout>
                     <Budgets />
+                  </AppLayout>
+                }
+              />
+              <Route
+                path="/recurring"
+                element={
+                  <AppLayout>
+                    <Recurring />
                   </AppLayout>
                 }
               />

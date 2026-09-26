@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, CreditCard, ArrowDownLeft, PieChart, LogOut, Wallet } from 'lucide-react';
+import { LayoutDashboard, CreditCard, ArrowDownLeft, PieChart, Repeat, LogOut, Wallet } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 const Sidebar = () => {
@@ -11,6 +11,7 @@ const Sidebar = () => {
     { name: 'Expenses', path: '/expenses', icon: CreditCard },
     { name: 'Incomes', path: '/incomes', icon: ArrowDownLeft },
     { name: 'Budgets', path: '/budgets', icon: PieChart },
+    { name: 'Recurring', path: '/recurring', icon: Repeat },
   ];
 
   return (
