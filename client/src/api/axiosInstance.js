@@ -1,8 +1,14 @@
 import axios from 'axios';
 
+// Resolve backend API URL dynamically from environment variables
+const rawApiUrl = import.meta.env.VITE_API_URL || '';
+const apiBaseUrl = rawApiUrl
+  ? (rawApiUrl.endsWith('/api/v1') ? rawApiUrl : `${rawApiUrl.replace(/\/$/, '')}/api/v1`)
+  : '/api/v1';
+
 // Create Axios Instance with default config
 const axiosInstance = axios.create({
-  baseURL: '/api/v1',
+  baseURL: apiBaseUrl,
   headers: {
     'Content-Type': 'application/json',
   },
