@@ -15,6 +15,7 @@ import Recurring from './pages/Recurring';
 
 const AppLayout = ({ children }) => {
   const location = useLocation();
+  const [mobileOpen, setMobileOpen] = React.useState(false);
 
   const getPageTitle = (path) => {
     switch (path) {
@@ -35,10 +36,11 @@ const AppLayout = ({ children }) => {
 
   return (
     <div className="flex min-h-screen bg-gray-50 dark:bg-slate-900">
-      <Sidebar />
+      <Sidebar mobileOpen={mobileOpen} onMobileMenuToggle={() => setMobileOpen((o) => !o)} />
       <div className="flex-1 flex flex-col min-w-0">
-        <Navbar pageTitle={getPageTitle(location.pathname)} />
-        <main className="flex-1 p-6 md:p-8 overflow-y-auto">{children}</main>
+        <Navbar pageTitle={getPageTitle(location.pathname)} onMenuToggle={() => setMobileOpen((o) => !o)} />
+        {/* pb-16 md:pb-0 → leaves room for the mobile bottom tab bar */}
+        <main className="flex-1 p-4 md:p-8 pb-20 md:pb-8 overflow-y-auto">{children}</main>
       </div>
     </div>
   );

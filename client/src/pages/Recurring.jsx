@@ -142,9 +142,10 @@ const Recurring = () => {
   const handleProcessDue = async () => {
     try {
       setProcessing(true);
-      const res = await recurringApi.processDue();
-      setProcessResult(res);
-      fetchRecurring();
+      const result = await recurringApi.processDue();
+      // result = { processedCount, records }
+      setProcessResult(result);
+      await fetchRecurring();
     } catch (err) {
       console.error('Failed to process due recurring items:', err);
     } finally {

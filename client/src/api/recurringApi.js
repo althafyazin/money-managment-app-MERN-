@@ -15,6 +15,8 @@ export const recurringApi = {
   },
   processDue: async () => {
     const res = await axiosInstance.post('/recurring/process');
-    return res?.data || res;
+    // axiosInstance interceptor already unwraps response.data
+    // res is now { success, message, data: { processedCount, records } }
+    return res?.data ?? res;
   },
 };
