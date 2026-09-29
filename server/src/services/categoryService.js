@@ -13,11 +13,12 @@ class CategoryService {
       $or: [{ user: null }, { user: userId }],
     };
 
-    if (type) {
-      if (!['expense', 'income'].includes(type)) {
+    if (type && typeof type === 'string' && type.trim() !== '' && type !== 'undefined' && type !== 'null') {
+      const cleanType = type.trim().toLowerCase();
+      if (!['expense', 'income'].includes(cleanType)) {
         throw new AppError('Invalid category type filter. Must be expense or income.', 400);
       }
-      filter.type = type;
+      filter.type = cleanType;
     }
 
     const categories = await Category.find(filter).sort({ isCustom: 1, name: 1 });

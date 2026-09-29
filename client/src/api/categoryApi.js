@@ -1,7 +1,8 @@
 import axiosInstance from './axiosInstance';
 
 const categoryApi = {
-  getCategories: (type) => axiosInstance.get('/categories', { params: { type } }),
+  getCategories: (type) =>
+    axiosInstance.get('/categories', type ? { params: { type } } : {}),
   createCategory: (data) => axiosInstance.post('/categories', data),
   deleteCategory: (id) => axiosInstance.delete(`/categories/${id}`),
 };

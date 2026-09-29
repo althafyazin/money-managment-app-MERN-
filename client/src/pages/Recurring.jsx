@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Repeat, Plus, Trash2, Calendar, RefreshCw, CheckCircle2, Clock, Tag } from 'lucide-react';
+import { Repeat, Plus, Trash2, Calendar, RefreshCw, CheckCircle2, Clock, Tag, AlertCircle } from 'lucide-react';
 import { recurringApi } from '../api/recurringApi';
 import categoryApi from '../api/categoryApi';
 import LoadingSpinner from '../components/common/LoadingSpinner';
@@ -10,8 +10,10 @@ const Recurring = () => {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [processResult, setProcessResult] = useState(null);
+  const [modalError, setModalError] = useState('');
 
   const [formData, setFormData] = useState({
     title: '',
@@ -23,29 +25,86 @@ const Recurring = () => {
     description: '',
   });
 
-  const fetchRecurringAndCategories = async () => {
+  const fetchCategories = async () => {
     try {
-      setLoading(true);
-      const [recData, catRes] = await Promise.all([
-        recurringApi.getRecurring(),
-        categoryApi.getCategories(),
-      ]);
-      setRecurringList(recData || []);
-      setCategories(catRes.data.categories || []);
+      const catRes = await categoryApi.getCategories();
+      const catList =
+        catRes?.data?.categories ||
+        catRes?.categories ||
+        catRes?.data ||
+        (Array.isArray(catRes) ? catRes : []);
+      setCategories(Array.isArray(catList) ? catList : []);
     } catch (err) {
-      console.error('Failed to load recurring data:', err);
-    } finally {
-      setLoading(false);
+      console.error('Failed to load categories:', err);
     }
   };
 
+  const fetchRecurring = async () => {
+    try {
+      const recData = await recurringApi.getRecurring();
+      setRecurringList(recData || []);
+    } catch (err) {
+      console.error('Failed to load recurring list:', err);
+    }
+  };
+
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      await recurringApi.processDue();
+    } catch (err) {
+      console.error('Auto-processing recurring items failed:', err);
+    }
+    await Promise.all([fetchRecurring(), fetchCategories()]);
+    setLoading(false);
+  };
+
   useEffect(() => {
-    fetchRecurringAndCategories();
+    loadData();
   }, []);
+
+  const filteredCategories = categories.filter((c) => c.type === formData.type);
+
+  // Auto-select first category when modal opens or type changes
+  useEffect(() => {
+    if (isModalOpen) {
+      const available = filteredCategories.length > 0 ? filteredCategories : categories;
+      if (available.length > 0) {
+        const firstCatId = available[0]._id || available[0].id;
+        if (!formData.category || !available.some((c) => (c._id || c.id) === formData.category)) {
+          setFormData((prev) => ({ ...prev, category: firstCatId }));
+        }
+      }
+    }
+  }, [isModalOpen, formData.type, categories]);
+
+  const handleOpenModal = () => {
+    setModalError('');
+    const available = filteredCategories.length > 0 ? filteredCategories : categories;
+    const initialCatId = available.length > 0 ? (available[0]._id || available[0].id) : '';
+    setFormData({
+      title: '',
+      amount: '',
+      type: 'expense',
+      category: initialCatId,
+      frequency: 'monthly',
+      nextDueDate: new Date().toISOString().split('T')[0],
+      description: '',
+    });
+    setIsModalOpen(true);
+  };
 
   const handleCreate = async (e) => {
     e.preventDefault();
+    setModalError('');
+
+    if (!formData.category) {
+      setModalError('Please select a valid category');
+      return;
+    }
+
     try {
+      setSubmitting(true);
       await recurringApi.createRecurring({
         ...formData,
         amount: parseFloat(formData.amount),
@@ -60,9 +119,13 @@ const Recurring = () => {
         nextDueDate: new Date().toISOString().split('T')[0],
         description: '',
       });
-      fetchRecurringAndCategories();
+      await recurringApi.processDue();
+      fetchRecurring();
     } catch (err) {
       console.error('Failed to create recurring transaction:', err);
+      setModalError(err.message || 'Failed to create recurring transaction template');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -70,7 +133,7 @@ const Recurring = () => {
     if (!window.confirm('Are you sure you want to delete this recurring template?')) return;
     try {
       await recurringApi.deleteRecurring(id);
-      fetchRecurringAndCategories();
+      fetchRecurring();
     } catch (err) {
       console.error('Failed to delete recurring item:', err);
     }
@@ -81,15 +144,13 @@ const Recurring = () => {
       setProcessing(true);
       const res = await recurringApi.processDue();
       setProcessResult(res);
-      fetchRecurringAndCategories();
+      fetchRecurring();
     } catch (err) {
       console.error('Failed to process due recurring items:', err);
     } finally {
       setProcessing(false);
     }
   };
-
-  const filteredCategories = categories.filter((c) => c.type === formData.type);
 
   if (loading) {
     return (
@@ -124,7 +185,7 @@ const Recurring = () => {
           </button>
 
           <button
-            onClick={() => setIsModalOpen(true)}
+            onClick={handleOpenModal}
             className="inline-flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm rounded-xl transition shadow-sm"
           >
             <Plus className="w-4 h-4" />
@@ -138,9 +199,15 @@ const Recurring = () => {
         <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 flex items-center justify-between">
           <div className="flex items-center gap-2 text-sm font-medium">
             <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-            <span>{processResult.processedCount > 0 ? `Successfully generated ${processResult.processedCount} transaction record(s)!` : 'All recurring transactions are up to date.'}</span>
+            <span>
+              {processResult.processedCount > 0
+                ? `Successfully generated ${processResult.processedCount} transaction record(s)!`
+                : 'All recurring transactions are up to date.'}
+            </span>
           </div>
-          <button onClick={() => setProcessResult(null)} className="text-xs text-emerald-600 hover:underline">Dismiss</button>
+          <button onClick={() => setProcessResult(null)} className="text-xs text-emerald-600 hover:underline">
+            Dismiss
+          </button>
         </div>
       )}
 
@@ -153,7 +220,7 @@ const Recurring = () => {
             Add recurring subscriptions, monthly rent, or automatic salaries to track your automated cashflow.
           </p>
           <button
-            onClick={() => setIsModalOpen(true)}
+            onClick={handleOpenModal}
             className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm rounded-xl transition"
           >
             <Plus className="w-4 h-4" /> Create First Recurring Template
@@ -216,6 +283,13 @@ const Recurring = () => {
       {/* Add Recurring Template Modal */}
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Add Recurring Transaction Template">
         <form onSubmit={handleCreate} className="space-y-4">
+          {modalError && (
+            <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs font-medium flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{modalError}</span>
+            </div>
+          )}
+
           <div>
             <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase mb-1">Type</label>
             <select
@@ -276,9 +350,10 @@ const Recurring = () => {
               onChange={(e) => setFormData({ ...formData, category: e.target.value })}
               className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2.5 text-sm text-slate-800 dark:text-slate-200"
             >
-              <option value="">Select Category</option>
-              {filteredCategories.map((c) => (
-                <option key={c._id} value={c._id}>{c.name}</option>
+              {(filteredCategories.length > 0 ? filteredCategories : categories).map((c) => (
+                <option key={c._id || c.id} value={c._id || c.id}>
+                  {c.name}
+                </option>
               ))}
             </select>
           </div>
@@ -304,9 +379,10 @@ const Recurring = () => {
             </button>
             <button
               type="submit"
-              className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition"
+              disabled={submitting}
+              className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition disabled:opacity-50 flex items-center gap-2"
             >
-              Create Recurring Template
+              {submitting ? 'Creating...' : 'Create Recurring Template'}
             </button>
           </div>
         </form>

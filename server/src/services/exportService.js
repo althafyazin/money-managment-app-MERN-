@@ -5,12 +5,12 @@ const Income = require('../models/Income');
  * Utility to escape field value for RFC 4180 CSV compliance
  */
 const escapeCsvField = (value) => {
-  if (value === null || value === undefined) return '""';
+  if (value === null || value === undefined) return '';
   const str = String(value);
-  if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+  if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
     return `"${str.replace(/"/g, '""')}"`;
   }
-  return `"${str}"`;
+  return str;
 };
 
 /**
@@ -87,7 +87,7 @@ const exportService = {
       ].join(','));
     });
 
-    return csvRows.join('\r\n');
+    return '\uFEFF' + csvRows.join('\r\n');
   },
 };
 

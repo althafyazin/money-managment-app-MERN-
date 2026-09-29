@@ -3,6 +3,7 @@ import { Wallet, ArrowDownLeft, CreditCard, PiggyBank, ArrowUpRight, Download, S
 import dashboardApi from '../api/dashboardApi';
 import { insightApi } from '../api/insightApi';
 import { exportApi } from '../api/exportApi';
+import { recurringApi } from '../api/recurringApi';
 import StatCard from '../components/common/StatCard';
 import CategoryPieChart from '../components/charts/CategoryPieChart';
 import MonthlyTrendChart from '../components/charts/MonthlyTrendChart';
@@ -20,6 +21,7 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
+        await recurringApi.processDue().catch(() => {});
         const [sumRes, chartRes, recentRes, insightRes] = await Promise.allSettled([
           dashboardApi.getSummary(),
           dashboardApi.getCharts('6months'),
